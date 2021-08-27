@@ -1,0 +1,102 @@
+// These constants won't change. They're used to give names to the pins used:
+const int analogInPin1 = A0;  // Analog input pin that the first sharp sensor is attached to
+const int analogInPin2 = A5;  // Analog input pin that the second sharp sensor is attached to
+const int analogOutPin = 13;  // Analog output pin that the LED is attached to
+int ledState = LOW;
+int systemState = 0;          //system has 3 different states (ready, wait & entry), variable represents what state system is at.
+
+int sensorValueAnalog1 = 0;   // value read from the first sharp sensor
+int sensorValueAnalog2 = 0;
+int outputValue1 = 0;         // value output to the PWM (analog out)
+int outputValue2 = 0;         // value output to the PWM (analog out)
+int counter = 0;
+bool digitalSensorState1 = 0;
+bool digitalSensorState2 = 0;
+
+void setup() {
+  // initialize serial communications at 9600 bps:
+  Serial.begin(9600);
+  pinMode(analogInPin1, INPUT);
+  pinMode(analogInPin2, INPUT);
+  pinMode(analogOutPin, OUTPUT);
+  /*
+  digitalSensorState1 = digitalRead(analogInPin1);
+  Serial.print(digitalSensorState1);
+  delay(5000);
+  */
+}
+
+void setState(int state) {
+  if ( state != 1 || state != 2 || state != 3 ) { systemState = 1; }  //any invalid entry sets state to default.
+  else { systemState = state; }
+}
+
+bool getSensorState ( int sensor) {
+  if (sensor > 150) { return true; }
+}
+
+void readyState() {
+  while (systemState == 1) {
+  Serial.println(" Ready for entry ... ");
+  delay(4000);
+  }
+}
+
+void waitState() {  
+  while (systemState = 2) {
+    Serial.println("You're halfway in...");
+    delay(4000);
+  }
+}
+
+void entryState() {  
+  while (systemState = 3) {
+    Serial.println("You're in!");
+    delay(4000);
+  }
+}
+
+
+void loop() {
+  // read the analog in value:
+  sensorValueAnalog1 = analogRead(analogInPin1);
+  sensorValueAnalog2 = analogRead(analogInPin2);
+
+  //map it to the range of the analog out:
+  outputValue1 = map(sensorValueAnalog1, 0, 1023, 0, 255);
+  outputValue2 = map(sensorValueAnalog2, 0, 1023, 0, 255);
+  //change the analog out value:
+  analogWrite(analogOutPin, outputValue1);
+
+  setState(systemState);
+  
+  switch (systemState) {
+    case 1:
+      if ( getSensorState(sensorValueAnalog1) ) { waitState(); }
+      else { readyState(); }
+      break;
+
+   case 2:
+      if ( getSensorState(sensorValueAnalog1) && getSensorState(sensorValueAnalog2) ) { entryState(); }
+      else { waitState(); }
+      break;
+
+  case 3:
+      Serial.println("Entry made.");
+      readyState();
+      break;
+      
+  default:
+      Serial.println("Resetting ...");
+      readyState();
+ }
+       
+  // print the results to the Serial Monitor:
+  Serial.print("sensor = ");
+  Serial.print(sensorValueAnalog1);
+  Serial.print("\t output = ");
+  Serial.println(outputValue1);
+
+  // wait 2 milliseconds before the next loop for the analog-to-digital
+  // converter to settle after the last reading:
+}
